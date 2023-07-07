@@ -158,7 +158,7 @@ crack xs = encode (-factor) xs                                  -- encode negati
 -- Exercises
 
 -- 1. give an expression that calc. the sum 1^2 + 2^2+... 100^2
--- [sum [x^2} | x <- [1..100]]
+-- [sum [x^2] | x <- [1..100]]
 
 -- 2. make a grid of size m x n
 -- gird 1 2 -> [(0,0),(0,1),(0,2),(1,0)(1,1)(1,2)]
