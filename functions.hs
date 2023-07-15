@@ -113,7 +113,7 @@ mult :: Int -> Int -> Int -> Int
 -- mult x y z = x*y*z
 mult = \x -> (\y -> (\z -> x*y*z))
 
--- Luhn algorithm, is used to check back card numbers
+-- Luhn algorithm, is used to check bank card numbers
 luhnDouble :: Int -> Int
 luhnDouble x = if f <= 9 then f else f - 9
                where f = x * 2
