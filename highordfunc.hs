@@ -1,4 +1,5 @@
 import Data.Char
+import Data.List
 
 -- Higher-Order functions
 --
@@ -54,6 +55,7 @@ bin2int :: [Bit] -> Int
 -- a + 2 * (b + 2 * (c + (2 * d)))
 -- a + 2 * (b + 2 * (c + 2 (d + 2 * 0)))
 
+-- base conversion
 bin2int = foldr (\x y -> x + 2*y) 0
 
 int2bin :: Int -> [Bit]
@@ -63,4 +65,96 @@ int2bin n = n `mod` 2 : int2bin (n `div` 2)
 make8 :: [Bit] -> [Bit]
 make8 bits = take 8 (bits ++ repeat 0)
 
+-- Transmission
+--
+-- encode a string of chars as list of bits
+-- by converting each char into a Unicode number
+-- and convert that into a 8 bits bin number
 
+encode :: String -> [Bit]
+encode = concat . map (make8 . int2bin . ord)
+
+-- decoding
+
+-- chop the encode list into lists of 8 bits numbers
+chop8 :: [Bit] -> [[Bit]]
+chop8 [] = []
+chop8 bits = take 8 bits : chop8 (drop 8 bits)
+
+-- decode
+decode :: [Bit] -> String
+decode = map (chr . bin2int) . chop8
+
+-- transmit
+transmit :: String -> String
+transmit = decode . channel . encode
+
+channel :: [Bit] -> [Bit]
+channel = id
+
+-- transmit "hello world"
+-- "hello world"
+--
+
+
+-- Voting algorithms
+-- - First past the post system
+-- - alternative vote system
+
+-- First past the post
+votes :: [String]
+votes = ["Red", "Blue", "Green", "Blue", "Blue", "Red"]
+
+-- higher-order functions by selecting all elem. from
+-- list that are equal to the target value.
+count :: Eq a => a -> [a] -> Int
+count x = length . filter (== x)
+
+rmdups :: Eq a => [a] -> [a]
+rmdups [] = []
+rmdups (x:xs) = x : filter (/= x) (rmdups xs)
+
+-- sort comes from Data.List
+result :: Ord a => [a] -> [(Int,a)]
+result vs = sort [(count v vs, v) | v <- rmdups vs]
+
+-- select the second componend of the last result
+winner :: Ord a => [a] -> a
+winner = snd . last . result
+
+-- > winner votes
+-- > "Blue"
+
+-- Alternative voting system
+
+ballots :: [[String]]
+ballots = [["Red", "Green"],
+           ["Blue"],
+           ["Green", "Red", "Blue"],
+           ["Blue", "Green", "Red"],
+           ["Green"]]
+
+rmempty :: Eq a => [[a]] -> [[a]]
+rmempty = filter (/= [])
+
+elim :: Eq a => a -> [[a]] -> [[a]]
+elim x = map (filter (/= x))
+
+rank :: Ord a => [[a]] -> [a]
+rank = map snd . result . map head
+
+winner' :: Ord a => [[a]] -> a
+winner' bs = case rank (rmempty bs) of
+                [c]     -> c
+                (c:cs)  -> winner' (elim c bs)
+
+-- Exercises
+--
+-- 1. Show how the list comprehesion [f x | x <- xs, p x] can be re-expressed
+--    using map and filter
+
+-- map f (filter p xs)
+
+-- 3. redefine `map f` and `filter p` using foldr
+-- map f = foldr (\x xs -> f x : xs) []
+-- filter p = foldr (\x xs -> if p then x:xs else xs) []
