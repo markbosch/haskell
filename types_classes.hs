@@ -112,3 +112,91 @@ occurs x (Node l y r)  = x == y || occurs x l || occurs x r
 
 -- > occurs 1 t --> True
 -- > occurs 8 t --> False
+
+-- Flatten
+flatten :: Tree a -> [a]
+flatten (Leaf x)   = [x]
+flatten (Node l x r) = flatten l ++ [x] ++ flatten r
+
+-- Occurs optimized
+occurs' :: Ord a => a -> Tree a -> Bool
+occurs' x (Leaf y)                 = x == y
+occurs' x (Node l y r) | x == y    = True
+                       | x < y     = occurs' x l
+                       | otherwise = occurs' y r
+
+-- Derived instances
+-- make data types into instance of a built-in classes like Eq or Show
+
+data Foo = Bar | Spam
+           deriving (Eq, Show, Read)
+
+-- > Bar == Bar => True
+-- > Spam == Bar => False
+-- > Show Spam => "Spam"
+-- > Read "Bar" :: Foo
+
+-- Tautology checker
+-- function that decides if simple logical propositions are always true
+
+data Prop = Const Bool
+          | Var Char
+          | Not Prop
+          | And Prop Prop
+          | Imply Prop Prop   -- =>
+
+p1 :: Prop
+p1 = And (Var 'A') (Not (Var 'A'))
+
+p2 :: Prop
+p2 = Imply (And (Var 'A') (Var 'B')) (Var 'A')
+
+p3 :: Prop
+p3 = Imply (Var 'A') (And (Var 'A') (Var 'B'))
+
+p4 :: Prop
+p4 = Imply (And (Var 'A') (Imply
+        (Var 'A') (Var 'B'))) (Var 'B')
+
+-- Substitution
+-- with a lookup table like [('A', False),('B', True)]
+
+type Subst = Assoc Char Bool
+
+-- evaluate
+eval :: Subst -> Prop -> Bool
+eval _ (Const b)   = b
+eval s (Var x)     = find x s
+eval s (Not p)     = not (eval s p)
+eval s (And p q)   = eval s p && eval s q
+eval s (Imply p q) = eval s p <= eval s q
+
+-- Get all vars from a proposition
+vars :: Prop -> [Char]
+vars (Const _)   = []
+vars (Var x)     = [x]
+vars (Not p)     = vars p
+vars (And p q)   = vars p ++ vars q
+vars (Imply p q) = vars p ++ vars q
+
+bools :: Int -> [[Bool]]
+bools 0 = [[]]
+bools n = map (False:) bss ++ map (True:) bss
+         where bss = bools (n-1)
+
+-- copy paste rmdups from highordfunc
+rmdups :: Eq a => [a] -> [a]
+rmdups [] = []
+rmdups (x:xs) = x : filter (/= x) (rmdups xs)
+
+substs :: Prop -> [Subst]
+substs p = map (zip vs) (bools (length vs))
+           where vs = rmdups (vars p)
+
+isTaut :: Prop -> Bool
+isTaut p = and [eval s p | s <- substs p]
+
+-- > isTaut p1 => False
+-- > isTaut p2 => True
+-- > isTaut p3 => False
+-- > isTaut p4 => True
