@@ -200,3 +200,4 @@ isTaut p = and [eval s p | s <- substs p]
 -- > isTaut p2 => True
 -- > isTaut p3 => False
 -- > isTaut p4 => True
+
