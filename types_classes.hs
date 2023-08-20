@@ -84,6 +84,8 @@ add :: Nat -> Nat -> Nat
 add Zero     n = n
 add (Succ m) n = Succ (add m n)
 
+-- > add (Succ (Succ Zero) (Succ Zero) -> 2 + 1
+
 data List a = Nil | Cons a (List a)
 
 len :: List a -> Int
@@ -201,3 +203,62 @@ isTaut p = and [eval s p | s <- substs p]
 -- > isTaut p3 => False
 -- > isTaut p4 => True
 
+-- Exercises
+
+-- 1.
+
+mult m Zero = Zero
+mult m (Succ n) = add m (mult m n)
+
+-- > mult (Succ (Succ Zero)) (Succ (Succ (Succ Zero)))  -> 2 x 3
+
+-- 2.
+occurs'' x (Leaf y)     = x == y
+occurs'' x (Node l y r) = case compare x y of
+                             LT -> occurs'' x l
+                             EQ -> True
+                             GT -> occurs'' x r
+
+-- 3.
+data Tree' a = Leaf' a | Node' (Tree' a) (Tree' a)
+
+leaves :: Tree' a -> Int
+leaves (Leaf' _) = 1
+leaves (Node' l r) = leaves l + leaves r
+
+balanced :: Tree' a -> Bool
+balanced (Leaf' _)   = True
+balanced (Node' l r) = abs(leaves l - leaves r) <= 1
+                       && balanced l && balanced r
+
+t' :: Tree' Int
+t' = Node' (Leaf' 1) (Leaf' 2)
+
+-- > balanced t'
+-- > True
+
+t'' :: Tree' Int
+t'' = Node' (Node' (Leaf' 1) (Leaf' 2)) (Leaf' 3)
+
+--          Node'
+--         /     \
+--     Node'      Leaf' 3
+--    /    \
+-- Leaf' 1  Leaf' 2
+--
+-- > balanced t''
+-- > True
+
+unbalancedTree :: Tree' Int
+unbalancedTree = Node' (Node' (Leaf' 1) (Node' (Leaf' 2) (Leaf' 3))) (Leaf' 4)
+
+-- > balanced unbalancedTree
+-- > False
+
+-- 4.
+halve xs = splitAt (length xs `div` 2) xs
+
+balance :: [a] -> Tree' a
+balance [x] = Leaf' x
+balance xs  = Node' (balance ys) (balance zs)
+              where (ys,zs) = halve xs
