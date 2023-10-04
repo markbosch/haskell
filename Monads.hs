@@ -79,3 +79,60 @@ inc' = fmap (+1)
 -- [2,3,4,5,6]
 -- > inc' (Node (Leaf 1) (Leaf 2))
 -- Node (Leaf 2) (Leaf 3)
+
+-- Applicative
+
+getChars :: Int -> IO String
+getChars 0 = return []
+getChars n = pure (:) <*> getChar <*> getChars (n-1)
+
+-- Monads
+
+data Expr = Val Int | Div Expr Expr
+
+eval :: Expr -> Int
+eval (Val n)   = n
+eval (Div x y) = eval x `div` eval y
+
+-- > eval (Div (Val 1) (Val 0))
+-- divide by zero
+
+safediv :: Int -> Int -> Maybe Int
+safediv _ 0 = Nothing
+safediv n m = Just (n `div` m)
+
+eval' :: Expr -> Maybe Int
+eval' (Val n)   = Just n
+eval' (Div x y) = case eval' x of
+                     Nothing -> Nothing
+                     Just n  -> case eval' y of
+                                   Nothing -> Nothing
+                                   Just m  -> safediv n m
+
+-- could be re-written in a applicative style, but those not work
+-- because type mismatch Maybe Int to Int
+--eval :: Expr -> Maybe Int
+--eval (Val n)   = pure n
+--eval (Div x y) = pure safediv <*> eval x <*> eval y
+
+-- using the bind operator >>=
+
+eval'' :: Expr -> Maybe Int
+eval'' (Val n)   = Just n
+eval'' (Div x y) = eval'' x >>= \n ->
+                   eval'' y >>= \m ->
+                   safediv n m
+
+-- syntatic sugar with do
+-- the above can also be written with the do notation
+
+evalDo :: Expr -> Maybe Int
+evalDo (Val n)   = Just n
+evalDo (Div x y) = do n <- evalDo x
+                      m <- evalDo y
+                      safediv n m
+
+pairs :: [a] -> [b] ->[(a,b)]
+pairs xs ys = do x <- xs
+                 y <- ys
+                 return (x,y)
